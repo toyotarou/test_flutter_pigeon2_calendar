@@ -74,7 +74,34 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('カレンダー予定一覧')),
+      appBar: AppBar(
+        title: const Text('カレンダー予定一覧'),
+
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              final now = DateTime.now();
+              final event = CalendarEvent(
+                title: 'テスト予定',
+                description: 'pigeonから追加した予定',
+                location: '東京',
+                startTimeMillis: now.millisecondsSinceEpoch,
+                endTimeMillis: now.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+              );
+
+              final api = CalendarApi();
+              await api.addCalendarEvent(event);
+
+              setState(() {
+                status = '予定を追加しました！';
+              });
+
+              await loadEvents();
+            },
+            child: const Text('予定を追加'),
+          ),
+        ],
+      ),
       body:
           events.isEmpty
               ? Center(

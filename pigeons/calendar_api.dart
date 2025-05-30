@@ -11,6 +11,7 @@ class CalendarEvent {
 @HostApi()
 abstract class CalendarApi {
   String getPlatformVersion();
-
   List<CalendarEvent> getCalendarEvents();
+
+  void addCalendarEvent(CalendarEvent event); // ← ★追加
 }
