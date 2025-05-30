@@ -1,3 +1,4 @@
+# .github/workflows/flutter-ci.yml
 name: Flutter CI
 
 on:
@@ -16,7 +17,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          # ← ここを '3.29.0' → '3.32.1' に変える
+          flutter-version: '3.32.1'
 
       - name: Install dependencies
         run: flutter pub get
@@ -25,7 +27,6 @@ jobs:
         run: flutter analyze
 
       - name: Run tests with coverage
-        # テストが必須でない場合は continue-on-error: true も検討
         run: flutter test --coverage
 
       - name: Build debug APK
@@ -36,6 +37,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
+          # coverage/lcov.info のみ指定
           path: coverage/lcov.info
-        # coverage/lcov.info が無くても警告で止めたいなら次を追加
-        # continue-on-error: true
