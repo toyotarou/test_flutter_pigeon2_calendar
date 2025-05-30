@@ -34,6 +34,36 @@ private object CalendarApiPigeonUtils {
       )
     }
   }
+  fun deepEquals(a: Any?, b: Any?): Boolean {
+    if (a is ByteArray && b is ByteArray) {
+        return a.contentEquals(b)
+    }
+    if (a is IntArray && b is IntArray) {
+        return a.contentEquals(b)
+    }
+    if (a is LongArray && b is LongArray) {
+        return a.contentEquals(b)
+    }
+    if (a is DoubleArray && b is DoubleArray) {
+        return a.contentEquals(b)
+    }
+    if (a is Array<*> && b is Array<*>) {
+      return a.size == b.size &&
+          a.indices.all{ deepEquals(a[it], b[it]) }
+    }
+    if (a is List<*> && b is List<*>) {
+      return a.size == b.size &&
+          a.indices.all{ deepEquals(a[it], b[it]) }
+    }
+    if (a is Map<*, *> && b is Map<*, *>) {
+      return a.size == b.size && a.all {
+          (b as Map<Any?, Any?>).containsKey(it.key) &&
+          deepEquals(it.value, b[it.key])
+      }
+    }
+    return a == b
+  }
+      
 }
 
 /**
@@ -47,18 +77,72 @@ class FlutterError (
   override val message: String? = null,
   val details: Any? = null
 ) : Throwable()
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class CalendarEvent (
+  val title: String? = null,
+  val description: String? = null,
+  val location: String? = null,
+  val startTimeMillis: Long? = null,
+  val endTimeMillis: Long? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): CalendarEvent {
+      val title = pigeonVar_list[0] as String?
+      val description = pigeonVar_list[1] as String?
+      val location = pigeonVar_list[2] as String?
+      val startTimeMillis = pigeonVar_list[3] as Long?
+      val endTimeMillis = pigeonVar_list[4] as Long?
+      return CalendarEvent(title, description, location, startTimeMillis, endTimeMillis)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      title,
+      description,
+      location,
+      startTimeMillis,
+      endTimeMillis,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other !is CalendarEvent) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    return CalendarApiPigeonUtils.deepEquals(toList(), other.toList())  }
+
+  override fun hashCode(): Int = toList().hashCode()
+}
 private open class CalendarApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
-    return     super.readValueOfType(type, buffer)
+    return when (type) {
+      129.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          CalendarEvent.fromList(it)
+        }
+      }
+      else -> super.readValueOfType(type, buffer)
+    }
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
-    super.writeValue(stream, value)
+    when (value) {
+      is CalendarEvent -> {
+        stream.write(129)
+        writeValue(stream, value.toList())
+      }
+      else -> super.writeValue(stream, value)
+    }
   }
 }
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface CalendarApi {
   fun getPlatformVersion(): String
+  fun getCalendarEvents(): List<CalendarEvent>
 
   companion object {
     /** The codec used by CalendarApi. */
@@ -75,6 +159,21 @@ interface CalendarApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getPlatformVersion())
+            } catch (exception: Throwable) {
+              CalendarApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pigeon_calendar_sample.CalendarApi.getCalendarEvents$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCalendarEvents())
             } catch (exception: Throwable) {
               CalendarApiPigeonUtils.wrapError(exception)
             }

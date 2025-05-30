@@ -1,7 +1,16 @@
 import 'package:pigeon/pigeon.dart';
 
-// Flutter側から呼び出すメソッド
+class CalendarEvent {
+  String? title;
+  String? description;
+  String? location;
+  int? startTimeMillis;
+  int? endTimeMillis;
+}
+
 @HostApi()
 abstract class CalendarApi {
-  String getPlatformVersion(); // 動作確認用メソッド
+  String getPlatformVersion();
+
+  List<CalendarEvent> getCalendarEvents();
 }

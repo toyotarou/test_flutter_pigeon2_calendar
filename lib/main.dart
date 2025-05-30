@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'calendar_api.dart'; // pigeonで生成されたファイル
+import 'calendar_api.dart';
+
+import 'package:permission_handler/permission_handler.dart';
 
 void main() => runApp(const MyApp());
 
@@ -8,7 +10,9 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) => const MaterialApp(home: HomePage());
+  Widget build(BuildContext context) {
+    return const MaterialApp(home: HomePage());
+  }
 }
 
 class HomePage extends StatefulWidget {
@@ -19,30 +23,91 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String platformVersion = '取得中...';
+  List<CalendarEvent> events = [];
 
+  String status = '読み込み中...';
+
+  ///
   @override
   void initState() {
     super.initState();
 
-    fetchPlatformVersion();
+    init();
   }
 
-  Future<void> fetchPlatformVersion() async {
-    final api = CalendarApi();
+  ///
+  Future<void> init() async {
+    final status = await Permission.calendar.status;
 
-    final version = await api.getPlatformVersion();
+    print('初期状態: $status');
 
-    setState(() {
-      platformVersion = version;
-    });
+    final result = await Permission.calendar.request();
+
+    print('リクエスト結果: $result');
+
+    if (!result.isGranted) {
+      setState(() => this.status = 'カレンダー権限が必要です（現在の状態: $result）');
+
+      return;
+    }
+
+    await loadEvents();
   }
 
+  ///
+  Future<void> loadEvents() async {
+    try {
+      final api = CalendarApi();
+
+      final eventList = await api.getCalendarEvents();
+
+      setState(() {
+        events = eventList;
+        status = '取得成功';
+      });
+    } catch (e) {
+      setState(() => status = 'エラー: $e');
+    }
+  }
+
+  ///
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('pigeon 動作確認')),
-      body: Center(child: Text('プラットフォーム: $platformVersion')),
+      appBar: AppBar(title: const Text('カレンダー予定一覧')),
+      body:
+          events.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(status),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final result = await Permission.calendar.request();
+                        if (result.isGranted) {
+                          await loadEvents();
+                        } else {
+                          setState(() => status = 'カレンダー権限が必要です（状態: $result）');
+                        }
+                      },
+                      child: const Text('権限を再リクエスト'),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  final e = events[index];
+
+                  return ListTile(
+                    title: Text(e.title ?? '無題'),
+                    subtitle: Text('開始: ${DateTime.fromMillisecondsSinceEpoch(e.startTimeMillis ?? 0)}'),
+                  );
+                },
+              ),
     );
   }
 }
