@@ -27,8 +27,6 @@ jobs:
 
       - name: Run tests with coverage
         run: flutter test --coverage
-        # テストが無くても先に進める
-        continue-on-error: true
 
       - name: Build debug APK
         run: flutter build apk --debug
@@ -39,5 +37,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage/lcov.info
-        # coverage がなくても止めない
-        continue-on-error: true
