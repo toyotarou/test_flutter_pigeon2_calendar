@@ -1,7 +1,5 @@
-# .github/workflows/flutter-ci.yml
 name: Flutter CI
 
-# いつ動かすか
 on:
   push:
     branches: [ main ]
@@ -10,51 +8,34 @@ on:
 
 jobs:
   build-and-test:
-    # Ubuntu の仮想環境で動かす
     runs-on: ubuntu-latest
-
     steps:
-      # 1. リポジトリをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Flutter のセットアップ
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          # プロジェクトで使っている Flutter のバージョンを指定
           flutter-version: '3.29.0'
 
-      # 3. 依存パッケージを取得
-      - name: flutter pub get
+      - name: Install dependencies
         run: flutter pub get
 
-      # 4. 静的解析（analyze）
-      - name: flutter analyze
+      - name: Static analysis
         run: flutter analyze
 
-      # 5. ユニットテスト実行
-      - name: flutter test
+      - name: Run tests with coverage
+        # テストが必須でない場合は continue-on-error: true も検討
         run: flutter test --coverage
 
-      # 6. （オプション）ビルド確認
-      #    Android APK を生成できるか確認したい場合
-      - name: flutter build apk --debug
+      - name: Build debug APK
         run: flutter build apk --debug
 
-
-
-      # （変更後：@v4）
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/
-
-
-
-
-
-
-
+          path: coverage/lcov.info
+        # coverage/lcov.info が無くても警告で止めたいなら次を追加
+        # continue-on-error: true
